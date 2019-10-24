@@ -1,4 +1,3 @@
-//Add your code here
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +43,6 @@ int num_shell_builtin_cmd() {
 int shell_exit(char **args, int count) {
     if (args[1]==NULL)  return 0;
     else {
-        //printf("Error from shell exit\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
         return 1;
     }
@@ -53,24 +51,13 @@ int shell_exit(char **args, int count) {
 //change directory, and send 1 so taht shell will continue running
 int shell_cd(char **args, int count) { 
     if(args[1]==NULL) {
-        //printf("Error from shell cd 1\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
     }
     else if (args[2]==NULL) {
         chdir(args[1]);
-        /*
-        if (chdir(args[1]) != 0) {
-            //printf("Error from shell cd 2\n");
-            write(STDERR_FILENO, error_message, strlen(error_message));
-            //exit(1);
-        }
-        else exit(0);
-        */
     }
     else {//two many arguments
-        //printf("Error from shell cd 3\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
-        //exit(0);
     }
     return 1;
 }
@@ -81,10 +68,10 @@ void generate_abs_path(char *in_path, char *abs_path) {
        char temp_path[1024];
        getcwd(temp_path,sizeof(temp_path));
        strcpy(abs_path, temp_path);
-       //printf("The abs_path is %s\n", abs_path);
+      
        strcat(abs_path,"/");
        strcat(abs_path,in_path);
-       //printf("The abs_path is %s\n", abs_path);
+       
         return ;
     }
 }
@@ -104,10 +91,8 @@ int shell_path(char **args, int count) {
             strcat(path,":");
             generate_abs_path(args[i],temp);
             strcat(path,temp);
-            //free(temp);
         }
     }
-    //printf("New path is %s\n", path);
     return 1;
 }
 
@@ -121,9 +106,6 @@ const char *get_filename_ext(const char *filename) {
 //launch a program and wait for it to finish
 //args should terminate with NULL
 int shell_launchProg(char **args, int redirect, char* out_file) {
-     //printf("Current arg0 is %s\n", args[0]);
-     //printf("Curent path is %s\n",path);
-     //skip comment line
      if(args[0][0]=='#') return 1;
 
     //add path to the cmd args[0]
@@ -144,12 +126,9 @@ int shell_launchProg(char **args, int redirect, char* out_file) {
     }
     
     while ((temp = strsep(&p_path,":")) != NULL) {
-        //trim(cmd);
-        //printf("Now search path: %s\n",temp);
         strcpy(cmd,temp);
         strcat(cmd,"/");
         strcat(cmd,args[0]);
-        //printf("Now search command: %s\n",cmd);
         if (is_sh_script==1) {
             fd = access(cmd, F_OK);
         }
@@ -158,52 +137,24 @@ int shell_launchProg(char **args, int redirect, char* out_file) {
         }
         if(fd!=-1) {
             found_prog_success = 1;
-            //exit
-            //printf("Current cmd is %s\n", cmd);
             break;
         }
     }
     if (found_prog_success == 0) {
-        //printf("Error from shell launch program 1\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
         return 1;
     }
-    /*
-    strcpy(cmd,path);
-    strcat(cmd,"/");
-    strcat(cmd,args[0]);
-    fd = access(cmd, X_OK);
-    if (fd==-1)  {
-            //printf("Cannot find the command %s\n",cmd);
-            write(STDERR_FILENO, error_message, strlen(error_message));
-            return 1;
-    }
-    */
    
     //if it is sh file
-    //const char *sh_file = get_filename_ext(cmd);
     if (is_sh_script == 1) {
-        //printf("Excuet this script %s\n",cmd);
         char *scriptName = (char*)malloc(1024*sizeof(char));
         strcpy(scriptName,cmd);
         process_shell_script(scriptName, redirect, out_file);
         return 1;
     }
     
-    //implement redirection
-    //int redirection = 0;
-    /*
-    while(args) {
-        printf("The arguemnts are %s\n",*(args+i));
-        //if(*(args+i)[0] == '>') printf("There is redirection\n");
-        i++;
-    }
-    printf("There is no redirection\n");
-    */
-    
     //printf("Current real cmd is %s\n", cmd);
     pid_t pid;
-    //int status;
 
     pid = fork();
     //execute child process
@@ -214,24 +165,12 @@ int shell_launchProg(char **args, int redirect, char* out_file) {
             execv(cmd,args);
         }
         else execv(cmd,args);
-        /*
-        if (execv(cmd,args) == -1) {
-            write(STDERR_FILENO, error_message, strlen(error_message));
-        }
-        exit(EXIT_FAILURE);
-        */
     }
     else if (pid < 0 ) { //Forking error
-        //printf("Error from shell launch program 2\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
     }
     else { //parent process
         waitpid(pid, NULL, 0);
-        /*
-        do {
-            waitpid(pid, &status, WUNTRACED);
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-        */
     }
 
     return 1;
@@ -273,7 +212,6 @@ char* read_line(void){
     size_t line_size = 1024;
     char *line = (char*)malloc(line_size*sizeof(char));
     if (line==NULL) {
-        //printf("Error from read line program 1\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
         exit(1);
     }
@@ -282,7 +220,6 @@ char* read_line(void){
          trim(line);
          size_t length = strlen(line);
          if(line[length-1]=='\n' || line[length-1]==EOF) line[length-1] = '\0';
-         //printf("The line is %s\n", line);
          return line;
     }
     else exit(0);
@@ -295,7 +232,6 @@ char** parse_commands(char *line, int *count) {
     size_t command_length = 256;
     char  **commands = (char**)malloc(commands_num*sizeof(char*));
     if (commands == NULL ) {
-        //printf("Error from parse_commands 1\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
         exit(1); 
     }
@@ -303,7 +239,6 @@ char** parse_commands(char *line, int *count) {
     *count = 0;
     commands[*count] = (char*)malloc(command_length*sizeof(char));
     if (commands[*count] == NULL)  {
-        //printf("Error from parse_commands 2\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
         exit(1); 
     }
@@ -313,28 +248,21 @@ char** parse_commands(char *line, int *count) {
             (*count)++;
             commands[*count] = (char*)malloc(command_length*sizeof(char));
             if (commands[*count] == NULL)  {
-                //printf("Error from parse_commands 3\n");
                 write(STDERR_FILENO, error_message, strlen(error_message)); 
                 exit(1);
             }
         }
     }
-    /*
-    printf("There are %d commands\n",*count);
-    for (j = 0; j < *count; j++)  printf("The commands are %s\n",commands[j]);
-    */
     return commands;
 }
 
 
 //parse each commands into arguments
 char** parse_redirections(char *command, int *count, char* sep) {
-    //int j;
     size_t argv_num = 256;
     size_t argv_length = 100;
     char  **arguments = (char**)malloc(argv_num*sizeof(char*));
     if (arguments == NULL ) {
-        //printf("Error from parse_redirections 1\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
         exit(1); 
     }
@@ -343,36 +271,26 @@ char** parse_redirections(char *command, int *count, char* sep) {
     *count = 0;
     arguments[*count] = (char*)malloc(argv_length*sizeof(char));
     if (arguments[*count] == NULL)  {
-        //printf("Error from parse_redirections 2\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
         exit(1); 
     }
-    while ( (arguments[*count] = strsep(&command,sep)) != NULL)  {
-        //trim(arguments[*count]);
-        
-        //if (!isspace(arguments[*count][0])  && (arguments[*count][0] != '\0') ) {
+    while ( (arguments[*count] = strsep(&command,sep)) != NULL)  {      
             (*count)++;
             arguments[*count] = (char*)malloc(argv_length*sizeof(char));
             if (arguments[*count] == NULL)  {
                 //printf("Error from parse_redirections 3\n");
                 write(STDERR_FILENO, error_message, strlen(error_message)); 
                 exit(1);
-            //}
-        }
+            }
     }
     arguments[*count]=(char*)NULL;
     (*count)++;
 
-    /*
-    for (j = 0; j < *count; j++)
-        printf("The arguments are %s\n", arguments[j]);
-    */
     return arguments;
 }
 
 //parse each commands into arguments
 char** parse_arguments(char *command, int *count, char* sep) {
-    //int j;
     size_t argv_num = 256;
     size_t argv_length = 100;
     char  **arguments = (char**)malloc(argv_num*sizeof(char*));
@@ -386,7 +304,6 @@ char** parse_arguments(char *command, int *count, char* sep) {
     *count = 0;
     arguments[*count] = (char*)malloc(argv_length*sizeof(char));
     if (arguments[*count] == NULL)  {
-        //printf("Error from parse_arguments 2\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
         exit(1); 
     }
@@ -397,7 +314,6 @@ char** parse_arguments(char *command, int *count, char* sep) {
             (*count)++;
             arguments[*count] = (char*)malloc(argv_length*sizeof(char));
             if (arguments[*count] == NULL)  {
-                //printf("Error from parse_arguments 3\n");
                 write(STDERR_FILENO, error_message, strlen(error_message)); 
                 exit(1);
             }
@@ -431,50 +347,33 @@ void interactive_loop() {
             trim(commands[i]);
             int redirect_count;
             redirections = parse_redirections(commands[i],&redirect_count,">");
-            //printf("There are %d directions\n",redirect_count);
-            //printf("second argument is %s\n",redirections[redirect_count-1]);
             if (redirect_count > 3) {//too mant redirection symbol
-                //printf("Error from interactive_loop 1\n");
                 write(STDERR_FILENO, error_message, strlen(error_message)); 
-                //exit(1);
             }
             else if (redirect_count == 2) {
                 trim(redirections[0]);
                 if (strcmp(redirections[0],"")==0) {
-                    //printf("Error from interactive_loop 2\n");
                     write(STDERR_FILENO, error_message, strlen(error_message));
                 }
                 else {
                     int arg_count;
                     arguments = parse_arguments(redirections[0], &arg_count, " ");
-                    /*
-                    for (j=0; j <count; j++)
-                    printf("The arguments are %s\n", arguments[j]);
-                    */
                     shell_continue = shell_execute(arguments,arg_count,0,"");
                 }
-                //free(commands[i]);
-                //free(arguments);
             }
             else {//just one redirect redirect_count == 3 due to NULL as last
                 trim(redirections[0]);
                 trim(redirections[1]);
                 
-                //printf("redirection 0 is %s \n", redirections[0]);
-                //printf("redirection 1 is %s \n", redirections[1]);
                 int out_file_no;
                 outfiles = parse_arguments(redirections[1], &out_file_no, " ");
-                  //printf("There are %d output files \n", out_file_no);
                 if (strcmp(redirections[0],"")==0) {
-                    //printf("Error from interactive_loop 3\n");
                     write(STDERR_FILENO, error_message, strlen(error_message));
                 }
                 else if (strcmp(redirections[1],"")==0 || redirections[1]==NULL  ) {
-                    //printf("Error from interactive_loop 4\n");
                     write(STDERR_FILENO, error_message, strlen(error_message));
                 }
                 else if (out_file_no > 2) {//more than 1 outfile given
-                    //printf("Error from interactive_loop 5\n");
                     write(STDERR_FILENO, error_message, strlen(error_message));
                 }
                 else {//just one output file
@@ -485,11 +384,7 @@ void interactive_loop() {
             }
             i++;
         }
-        //free(line);
-        //for (i = 0; i < commands_per_line; i++) {
-            //free(commands[i]);
-        //}
-        //free(commands);
+       
     } while (shell_continue);
 }
 
@@ -497,7 +392,6 @@ void process_shell_script(char* scriptName,int redirect, char* out_file) {
     size_t line_size = 1024;
     char *line = (char*)malloc(line_size*sizeof(char));
     if (line==NULL) {
-        //printf("Error from batch run 1\n");
          write(STDERR_FILENO, error_message, strlen(error_message));
          exit(1);
     }
@@ -506,14 +400,11 @@ void process_shell_script(char* scriptName,int redirect, char* out_file) {
 
     FILE  *in_fp = fopen(scriptName, "r");
     if (in_fp == NULL) {//cannot open script file
-        //printf("Cannot open the script file %s\n",filename);
-        //printf("Error from batch run 2\n");
         write(STDERR_FILENO, error_message, strlen(error_message)); 
         exit(1);
     }
     
     while (getline(&line, &line_size, in_fp) >=0 )  {
-        //printf("\nCurrent process this line: %s\n", line);
         trim(line);
         if (line[0]=='#') continue;
         size_t length = strlen(line);
@@ -524,8 +415,6 @@ void process_shell_script(char* scriptName,int redirect, char* out_file) {
     }
     fclose(in_fp);
     free(line);
-    //printf("The script has been processed\n");
-    //free()
 }
 
 
@@ -533,7 +422,6 @@ void batch_run(char* filename) {
     size_t line_size = 1024;
     char *line = (char*)malloc(line_size*sizeof(char));
     if (line==NULL) {
-        //printf("Error from batch run 1\n");
          write(STDERR_FILENO, error_message, strlen(error_message));
          exit(1);
     }
@@ -547,14 +435,11 @@ void batch_run(char* filename) {
 
     FILE  *in_fp = fopen(filename, "r");
     if (in_fp == NULL) {//cannot open script file
-        //printf("Cannot open the script file %s\n",filename);
-        //printf("Error from batch run 2\n");
         write(STDERR_FILENO, error_message, strlen(error_message)); 
         exit(1);
     }
     
     while (getline(&line, &line_size, in_fp) >=0 )  {
-        //printf("\nCurrent process this line: %s\n", line);
         trim(line);
         if (line[0]=='#') continue;
         size_t length = strlen(line);
@@ -566,16 +451,12 @@ void batch_run(char* filename) {
            int redirect_count;
             redirections = parse_redirections(commands[i],&redirect_count,">");
             if (redirect_count > 3) {//too mant redirection symbol
-                //printf("Too many redirection symbol\n");
-                //printf("Error from batch run 3\n");
                 write(STDERR_FILENO, error_message, strlen(error_message)); 
                 //exit(1);
             }
             else if (redirect_count == 2) {
                 trim(redirections[0]);
                 if (strcmp(redirections[0],"")==0) {
-                    //printf("Empty command\n");
-                    //printf("Error from batch run 4\n");
                     write(STDERR_FILENO, error_message, strlen(error_message));
                 }
                 else {
@@ -583,8 +464,6 @@ void batch_run(char* filename) {
                     arguments = parse_arguments(redirections[0], &arg_count, " ");
                     shell_execute(arguments,arg_count,0,"");
                 }
-                //free(commands[i]);
-                //free(arguments);
             }
             else {//just one redirect
                 trim(redirections[0]);
@@ -592,15 +471,12 @@ void batch_run(char* filename) {
                 int out_file_no;
                 outfiles = parse_arguments(redirections[1], &out_file_no, " ");
                 if (strcmp(redirections[0],"")==0) {
-                    //printf("Error from batch run 5\n");
                     write(STDERR_FILENO, error_message, strlen(error_message));
                 }
                 else if (strcmp(redirections[1],"")==0 || redirections[1]==NULL  ) {
-                    //printf("Error from batch run 6\n");
                     write(STDERR_FILENO, error_message, strlen(error_message));
                 }
                 else if (out_file_no > 2) {//more than 1 outfile given
-                    //printf("Error from batch run 7\n");
                     write(STDERR_FILENO, error_message, strlen(error_message));
                 }
                 else {//just one output file
@@ -614,8 +490,6 @@ void batch_run(char* filename) {
     }
     fclose(in_fp);
     free(line);
-    //printf("The script has been processed\n");
-    //free()
 }
 
 int main(int argc, char *argv[]) {
@@ -627,7 +501,6 @@ int main(int argc, char *argv[]) {
         batch_run(argv[1]);
     }
     else {
-        //printf("Error from batch main\n");
         write(STDERR_FILENO, error_message, strlen(error_message));
         return EXIT_FAILURE;
     }
